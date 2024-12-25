@@ -1,0 +1,118 @@
+#layout {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    width: 100vw;
+    flex-wrap: wrap;
+
+    div.layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    #layout_l {
+        flex: 1;
+        background-color: var(--c1);
+        // 只在右侧内阴影
+        box-shadow: -5px 0 10px 0px #00000066 inset;
+    }
+
+    #layout_r {
+        flex: 3;
+        background-color: var(--c1111);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        section#hint_panel {
+            flex: 1.2;
+            width: 100%;
+            background-color: var(--c111);
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+
+            span {
+                padding: 1.5vmin;
+            }
+
+            .cell {
+                padding: 1.5vmin;
+
+                width: 9vmin;
+                height: 9vmin;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                border-right: 0.6vmin solid var(--c1);
+                border-bottom: 0.6vmin solid var(--c1);
+                border-left: 0.6vmin solid var(--c111);
+                border-top: 0.6vmin solid var(--c111);
+                background-color: var(--c11);
+            }
+        }
+
+        section#game_panel {
+            flex: 9;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+
+            div#gameMap {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+
+                .row {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    flex-wrap: nowrap;
+
+                    .cell {
+                        padding: 0.2vmin;
+
+                        width: 9vmin;
+                        height: 9vmin;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        border-right: 0.6vmin solid var(--c1);
+                        border-bottom: 0.6vmin solid var(--c1);
+                        border-left: 0.6vmin solid var(--c111);
+                        border-top: 0.6vmin solid var(--c111);
+                        background-color: var(--c11);
+                    }
+                }
+            }
+        }
+    }
+}
+
+svg.ball {
+    cursor: pointer;
+}
+
+.grid{
+    position: relative;
+}
+
+// .grid::after {
+.grid .grid-mask {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2); /* 半透明遮罩层 */
+    cursor: pointer;
+    z-index: 2; /* 遮罩层在最上层 */
+}
