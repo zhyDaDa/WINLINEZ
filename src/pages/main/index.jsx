@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence } from "motion/react";
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
@@ -14,16 +14,17 @@ class OBJ {
         this.maskShow = false;
     }
 }
-
+const ballSize = 9;
 const color = [
     "#7C0902",
     "#FF4F00",
     "#FFBF00",
-    "#8DB600",
+    "#000000",
     "#007FFF",
     "#8A2BE2",
 ];
-const getRanX = () => Math.floor(Math.random() * color.length /2);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const getRanX = () => Math.floor((Math.random() * color.length) );
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -53,7 +54,7 @@ const getVaccantPos = (map) => {
 const getAccessiblePos = (map, i, j) => {
     // 用BFS遍历所有可达的位置, 以及路径
     let pos = [];
-    let queue = [{ x: i, y: j, route: [] }];
+    let queue = [{ x: i, y: j, route: [[i, j]] }];
     let visited = new Set();
     let dir = [
         [0, 1],
@@ -83,103 +84,143 @@ const getAccessiblePos = (map, i, j) => {
     return pos;
 };
 
-const Grid = ({
-    i,
-    j,
-    v,
-    onclk,
-    selectFlag,
-    selectPos,
-    disp,
-    maskShow,
-    onshadow,
-}) => {
-    return (
-        <div className="grid">
-            <AnimatePresence initial={false}>
-                {v == -1 ? null : (
-                    <motion.div
-                        className="ball"
-                        initial={{ opacity: 0.6, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0 }}
-                        transition={{
-                            duration: 0.4,
-                            repeat:
-                                !disp &&
-                                selectFlag &&
-                                selectPos[0] == i &&
-                                selectPos[1] == j
-                                    ? Infinity
-                                    : 0,
-                            repeatType: "reverse",
-                            scale: {
-                                type: "spring",
-                                visualDuration: 0.4,
-                                bounce: 0.5,
-                            },
-                        }}
-                    >
-                        <svg
-                            onClick={() => onclk(i, j)}
-                            width="100%"
-                            height="100%"
+const Grid = React.forwardRef(
+    (
+        { i, j, v, onclk, selectFlag, selectPos, disp, maskShow, onshadow },
+        ref
+    ) => {
+        return (
+            <div className="grid">
+                <AnimatePresence initial={true}>
+                    {v == -1 ? null : (
+                        <motion.div
+                            className="ball"
+                            initial={{ opacity: 0.6, scale: 0 }}
+                            animate={{ opacity: 1, scale: 0.9 }}
+                            exit={{ opacity: 0, scale: 0 }}
+                            transition={{
+                                duration: 0.4,
+                                repeat:
+                                    !disp &&
+                                    selectFlag &&
+                                    selectPos[0] == i &&
+                                    selectPos[1] == j
+                                        ? Infinity
+                                        : 0,
+                                repeatType: "reverse",
+                                scale: {
+                                    type: "spring",
+                                    visualDuration: 0.4,
+                                    bounce: 0.5,
+                                },
+                            }}
+                            ref={ref}
                         >
-                            <circle cx="50%" cy="50%" r="45%" fill={color[v]} />
-                            <circle
-                                cx="50%"
-                                cy="50%"
-                                r="45%"
-                                fill="black"
-                                fillOpacity="0.1"
-                            />
-                            <circle cx="48%" cy="48%" r="42%" fill={color[v]} />
-                            <circle
-                                cx="40%"
-                                cy="40%"
-                                r="22%"
-                                fill="white"
-                                fillOpacity="0.08"
-                            />
-                        </svg>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            <svg
+                                onClick={() => onclk(i, j)}
+                                width="100%"
+                                height="100%"
+                            >
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r="45%"
+                                    fill={color[v]}
+                                />
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r="45%"
+                                    fill="black"
+                                    fillOpacity="0.1"
+                                />
+                                <circle
+                                    cx="48%"
+                                    cy="48%"
+                                    r="42%"
+                                    fill={color[v]}
+                                />
+                                <circle
+                                    cx="40%"
+                                    cy="40%"
+                                    r="22%"
+                                    fill="white"
+                                    fillOpacity="0.08"
+                                />
+                            </svg>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            <div
-                className="grid-mask"
-                initial={{ opacity: 0.6 }}
-                animate={{ opacity: 0.0 }}
-                transition={{
-                    duration: 0.4,
-                    repeat: maskShow ? Infinity : 0,
-                    repeatType: "reverse",
-                }}
-                style={{
-                    display: maskShow ? "block" : "none",
-                }}
-                onClick={() => onshadow(i, j)}
-            >
-                {/* {coolsole.info("GridRef", `(${i}, ${j}) ${!disp && selectFlag && selectPos[0] == i && selectPos[1] == j}`)} */}
+                <div
+                    className="grid-mask"
+                    // initial={{ opacity: 0.0 }}
+                    // animate={{ opacity: 0.0 }}
+                    // transition={{
+                    //     duration: 0.4,
+                    //     repeat: maskShow ? Infinity : 0,
+                    //     repeatType: "reverse",
+                    // }}
+                    style={{
+                        display: maskShow ? "block" : "none",
+                    }}
+                    onClick={() => onshadow(i, j)}
+                >
+                    {/* {coolsole.info("GridRef", `(${i}, ${j}) ${!disp && selectFlag && selectPos[0] == i && selectPos[1] == j}`)} */}
+                </div>
             </div>
-        </div>
-    );
-};
+        );
+    }
+);
 
 const HomePage = () => {
     const [gameMap, setGameMap] = useState(getNewMap());
     const [hint, setHint] = useState([0, 0, 0]);
     const [selectFlag, setSelectFlag] = useState(false);
     const [selectPos, setSelectPos] = useState([-1, -1]);
+    const ballsRef = useRef(null);
 
-    const moveBall = (from, to) => {
-        let map = gameMap;
-        map[to[0]][to[1]].v = map[from[0]][from[1]].v;
-        map[from[0]][from[1]].v = -1;
-        setGameMap(map);
+    const getBalls = () => {
+        if (!ballsRef.current) {
+            ballsRef.current = new Map();
+        }
+        return ballsRef.current;
     };
 
-    const checkLine = () => {
+    const moveBall = async (from, to) => {
+        let route = getAccessiblePos(gameMap, from[0], from[1]).find(
+            (pos) => pos.x == to[0] && pos.y == to[1]
+        ).route;
+        let t = gameMap;
+        let e_ball = getBalls().get(`${from[0]},${from[1]}`);
+        let cur_x = 0,
+            cur_y = 0;
+        e_ball.style.transition = "all 0.3s";
+        e_ball.style.left = `0vmin`;
+        e_ball.style.top = `0vmin`;
+        await sleep(1);
+        e_ball.style.left = `0vmin`;
+        e_ball.style.top = `0vmin`;
+        console.log(e_ball);
+        for (let i = 1; i < route.length; i++) {
+            let [x, y] = route[i];
+            let [px, py] = route[i - 1];
+            let [dx, dy] = [x - px, y - py];
+            e_ball.style.left = `${cur_y + dy * ballSize}vmin`;
+            e_ball.style.top = `${cur_x + dx * ballSize}vmin`;
+            cur_x += dx * ballSize;
+            cur_y += dy * ballSize;
+            await sleep(80);
+        }
+        t[to[0]][to[1]].v = t[from[0]][from[1]].v;
+        t[from[0]][from[1]].v = -1;
+        e_ball.style.left = "";
+        e_ball.style.top = "";
+        e_ball.transition = "";
+        setGameMap(t);
+    };
+
+    const checkLine = async () => {
         // 查看是否存在5个连续的球(包括斜向), 检查出全部的连续球, 并消除
         const minLenToEliminate = 5;
         let t = gameMap;
@@ -192,7 +233,6 @@ const HomePage = () => {
                     return;
                 }
                 let v = obj.v;
-                let count = 1;
                 let dir = [
                     [0, 1],
                     [1, 0],
@@ -200,6 +240,7 @@ const HomePage = () => {
                     [1, -1],
                 ];
                 dir.forEach((d) => {
+                    let count = 1;
                     line = [[i, j]];
                     let x = i + d[0];
                     let y = j + d[1];
@@ -229,26 +270,31 @@ const HomePage = () => {
                         x -= d[0];
                         y -= d[1];
                     }
+                    if (count >= minLenToEliminate) {
+                        line.sort((a, b) => {
+                            if (a[0] == b[0]) {
+                                return a[1] - b[1];
+                            }
+                            return a[0] - b[0];
+                        });
+                        lineSet.add(JSON.stringify(line)); // 用set去重(必须格式化为字符串)
+                    }
                 });
-                if (count >= minLenToEliminate) {
-                    line.sort((a, b) => {
-                        if (a[0] == b[0]) {
-                            return a[1] - b[1];
-                        }
-                        return a[0] - b[0];
-                    });
-                    lineSet.add(JSON.stringify(line)); // 用set去重(必须格式化为字符串)
-                }
             });
         });
 
         // TODO: 消除连续的球
-        lineSet.forEach((line) => {
-            line = JSON.parse(line);
-            line.forEach((pos) => {
-                t[pos[0]][pos[1]].v = -1;
+        if (lineSet.size > 0) {
+            lineSet.forEach((line) => {
+                line = JSON.parse(line);
+                line.forEach((pos) => {
+                    t[pos[0]][pos[1]].v = -1;
+                    t[pos[0]][pos[1]].maskShow = true;
+                });
             });
-        });
+            console.log(lineSet);
+            await sleep(300);
+        }
 
         setGameMap(t);
     };
@@ -304,7 +350,7 @@ const HomePage = () => {
         setGameMap(t);
     };
 
-    const selectShadow = (i, j) => {
+    const selectShadow = async (i, j) => {
         coolsole.info("shadow", `(${i}, ${j})`);
         if (!selectFlag) {
             return;
@@ -313,12 +359,14 @@ const HomePage = () => {
         move(selectPos, [i, j]);
     };
 
-    const move = (from, to) => {
-        moveBall(from, to);
-        checkLine();
+    const move = async (from, to) => {
+        await moveBall(from, to);
         clearSelect();
+        await sleep(30);
+        await checkLine();
         generateNewBall();
         refreshHint();
+        checkLine();
     };
 
     useEffect(() => {
@@ -373,6 +421,17 @@ const HomePage = () => {
                                 {row.map((obj, j) => (
                                     <div key={j} className="cell">
                                         <Grid
+                                            ref={(node) => {
+                                                const balls = getBalls();
+                                                if (node) {
+                                                    balls.set(
+                                                        `${i},${j}`,
+                                                        node
+                                                    );
+                                                } else {
+                                                    balls.delete(`${i},${j}`);
+                                                }
+                                            }}
                                             i={i}
                                             j={j}
                                             v={obj.v}
