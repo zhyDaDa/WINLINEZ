@@ -49,6 +49,39 @@ const getVaccantPos = (map) => {
     return pos;
 };
 
+const getAccessiblePos = (map, i, j) => {
+    // 用BFS遍历所有可达的位置, 以及路径
+    let pos = [];
+    let queue = [{ x: i, y: j, route: [] }];
+    let visited = new Set();
+    let dir = [
+        [0, 1],
+        [1, 0],
+        [0, -1],
+        [-1, 0],
+    ];
+    while (queue.length > 0) {
+        let { x, y, route } = queue.shift();
+        visited.add(`${x},${y}`);
+        dir.forEach((d) => {
+            let nx = x + d[0];
+            let ny = y + d[1];
+            if (
+                nx >= 0 &&
+                nx < gameSize.h &&
+                ny >= 0 &&
+                ny < gameSize.w &&
+                map[nx][ny].v == -1 &&
+                !visited.has(`${nx},${ny}`)
+            ) {
+                pos.push({ x: nx, y: ny, route: [...route, [nx, ny]] });
+                queue.push({ x: nx, y: ny, route: [...route, [nx, ny]] });
+            }
+        });
+    }
+    return pos;
+}
+
 const Grid = ({
     i,
     j,
@@ -242,32 +275,32 @@ const HomePage = () => {
     const clearSelect = () => {
         setSelectFlag(false);
         setSelectPos([-1, -1]);
-        setGameMap((prev) => {
-            let map = prev;
-            for (let i = 0; i < gameSize.h; i++) {
-                for (let j = 0; j < gameSize.w; j++) {
-                    map[i][j].maskShow = false;
-                }
-            }
-            return map;
+        let t = gameMap;
+        t.forEach((row) => {
+            row.forEach((obj) => {
+                obj.maskShow = false;
+            });
         });
+        setGameMap(t);
     };
 
     const selectBall = (i, j) => {
+        // 选择球, 触发可以到达的位置判断, 以及选择的环节
         coolsole.info("select", `(${i}, ${j})`);
         if (selectFlag && selectPos[0] == i && selectPos[1] == j) {
             clearSelect();
             return;
+        }else if (selectFlag) {
+            clearSelect();
         }
         setSelectFlag(true);
         setSelectPos([i, j]);
-        setGameMap((prev) => {
-            let map = prev;
-            getVaccantPos(map).forEach((pos) => {
-                map[pos[0]][pos[1]].maskShow = true;
-            });
-            return map;
+        let t = gameMap;
+        getAccessiblePos(t, i, j).forEach((pos) => {
+            let {x,y,route} = pos;
+            t[x][y].maskShow = true;
         });
+        setGameMap(t);
     };
 
     const selectShadow = (i, j) => {
