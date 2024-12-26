@@ -136,8 +136,129 @@ const HomePage = () => {
     const [selectFlag, setSelectFlag] = useState(false);
     const [selectPos, setSelectPos] = useState([-1, -1]);
 
+    const moveBall = (from, to) => {
+        let map = gameMap;
+        map[to[0]][to[1]].v = map[from[0]][from[1]].v;
+        map[from[0]][from[1]].v = -1;
+        setGameMap(map);
+    };
+
+    const checkLine = () => {
+        // 查看是否存在5个连续的球(包括斜向), 检查出全部的连续球, 并消除
+        const minLenToEliminate = 5;
+        let t = gameMap;
+        let line = [];
+        let lineSet = new Set();
+        
+        t.forEach((row, i) => {
+            row.forEach((obj, j) => {
+                if (obj.v == -1) {
+                    return;
+                }
+                let v = obj.v;
+                let count = 1;
+                let dir = [
+                    [0, 1],
+                    [1, 0],
+                    [1, 1],
+                    [1, -1],
+                ];
+                dir.forEach((d) => {
+                    line = [[i, j]];
+                    let x = i + d[0];
+                    let y = j + d[1];
+                    while (
+                        x >= 0 &&
+                        x < gameSize.h &&
+                        y >= 0 &&
+                        y < gameSize.w &&
+                        t[x][y].v == v
+                    ) {
+                        count++;
+                        line.push([x, y]);
+                        x += d[0];
+                        y += d[1];
+                    }
+                    x = i - d[0];
+                    y = j - d[1];
+                    while (
+                        x >= 0 &&
+                        x < gameSize.h &&
+                        y >= 0 &&
+                        y < gameSize.w &&
+                        t[x][y].v == v
+                    ) {
+                        count++;
+                        line.push([x, y]);
+                        x -= d[0];
+                        y -= d[1];
+                    }
+                });
+                if (count >= minLenToEliminate) {
+                    line.sort((a, b) => {
+                        if (a[0] == b[0]) {
+                            return a[1] - b[1];
+                        }
+                        return a[0] - b[0];
+                    });
+                    lineSet.add(JSON.stringify(line)); // 用set去重(必须格式化为字符串)
+                }
+
+            });
+
+        });
+
+        // TODO: 消除连续的球
+        lineSet.forEach((line) => {
+            line = JSON.parse(line);
+            line.forEach((pos) => {
+                t[pos[0]][pos[1]].v = -1;
+            });
+        });
+
+        setGameMap(t);
+    }
+
+    const generateNewBall = () => {
+        // 根据hint生成新的球
+        let t = gameMap;
+        let pos = getVaccantPos(t);
+        for (let i = 0; i < hint.length; i++) {
+            let ran = Math.floor(Math.random() * pos.length);
+            t[pos[ran][0]][pos[ran][1]].v = hint[i];
+            pos.splice(ran, 1);
+        }
+        setGameMap(t);
+    };
+
+    const refreshHint = () => {
+        let hint = [];
+        for (let i = 0; i < 3; i++) {
+            hint.push(getRanX());
+        }
+        setHint(hint);
+    };
+
+    const clearSelect = () => {
+        setSelectFlag(false);
+        setSelectPos([-1, -1]);
+        setGameMap((prev) => {
+            let map = prev;
+            for (let i = 0; i < gameSize.h; i++) {
+                for (let j = 0; j < gameSize.w; j++) {
+                    map[i][j].maskShow = false;
+                }
+            }
+            return map;
+        });
+    };
+
     const selectBall = (i, j) => {
         coolsole.info("select", `(${i}, ${j})`);
+        if (selectFlag && selectPos[0] == i && selectPos[1] == j) {
+            clearSelect();
+            return;
+        }
         setSelectFlag(true);
         setSelectPos([i, j]);
         setGameMap((prev) => {
@@ -149,32 +270,21 @@ const HomePage = () => {
         });
     };
 
-    const moveBall = (from, to) => {
-        setGameMap((prev) => {
-            let map = prev;
-            map[to[0]][to[1]].v = map[from[0]][from[1]].v;
-            map[from[0]][from[1]].v = -1;
-            return map;
-        });
-    };
-
-    const clearSelect = () => {
-        setSelectFlag(false);
-        setSelectPos([-1, -1]);
-        setGameMap((prev) => {
-            let map = prev;
-            for(let i = 0; i < gameSize.h; i++) {
-                for(let j = 0; j < gameSize.w; j++) {
-                    map[i][j].maskShow = false;
-                }
-            }
-            return map;
-        });
-    };
     const selectShadow = (i, j) => {
         coolsole.info("shadow", `(${i}, ${j})`);
-        moveBall(selectPos, [i, j]);
+        if (!selectFlag) {
+            return;
+        }
+        // 如果在选择的情况下点了阴影, 说明开启一轮移动和判定
+        move(selectPos, [i, j]);
+    };
+
+    const move = (from, to) => {
+        moveBall(from, to);
+        checkLine();
         clearSelect();
+        generateNewBall();
+        refreshHint();
     };
 
     useEffect(() => {
@@ -199,11 +309,7 @@ const HomePage = () => {
         }
         setGameMap(map);
 
-        let hint = [];
-        for (let i = 0; i < 3; i++) {
-            hint.push(getRanX());
-        }
-        setHint(hint);
+        refreshHint();
     }, []);
 
     return (
