@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { AnimatePresence } from "motion/react";
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
@@ -22,7 +23,7 @@ const color = [
     "#007FFF",
     "#8A2BE2",
 ];
-const getRanX = () => Math.floor(Math.random() * color.length);
+const getRanX = () => Math.floor(Math.random() * color.length /2);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -80,7 +81,7 @@ const getAccessiblePos = (map, i, j) => {
         });
     }
     return pos;
-}
+};
 
 const Grid = ({
     i,
@@ -94,54 +95,56 @@ const Grid = ({
     onshadow,
 }) => {
     return (
-        <motion.div
-            className="grid"
-            initial={{ opacity: 0.6, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-                duration: 0.4,
-                repeat:
-                    !disp &&
-                    selectFlag &&
-                    selectPos[0] == i &&
-                    selectPos[1] == j
-                        ? Infinity
-                        : 0,
-                repeatType: "reverse",
-                scale: {
-                    type: "spring",
-                    visualDuration: 0.4,
-                    bounce: 0.5,
-                },
-            }}
-        >
-            {v == -1 ? (
-                <svg width="100%" height="100%"></svg>
-            ) : (
-                <svg
-                    onClick={() => onclk(i, j)}
-                    className="ball"
-                    width="100%"
-                    height="100%"
-                >
-                    <circle cx="50%" cy="50%" r="45%" fill={color[v]} />
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="45%"
-                        fill="black"
-                        fillOpacity="0.1"
-                    />
-                    <circle cx="48%" cy="48%" r="42%" fill={color[v]} />
-                    <circle
-                        cx="40%"
-                        cy="40%"
-                        r="22%"
-                        fill="white"
-                        fillOpacity="0.08"
-                    />
-                </svg>
-            )}
+        <div className="grid">
+            <AnimatePresence initial={false}>
+                {v == -1 ? null : (
+                    <motion.div
+                        className="ball"
+                        initial={{ opacity: 0.6, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        transition={{
+                            duration: 0.4,
+                            repeat:
+                                !disp &&
+                                selectFlag &&
+                                selectPos[0] == i &&
+                                selectPos[1] == j
+                                    ? Infinity
+                                    : 0,
+                            repeatType: "reverse",
+                            scale: {
+                                type: "spring",
+                                visualDuration: 0.4,
+                                bounce: 0.5,
+                            },
+                        }}
+                    >
+                        <svg
+                            onClick={() => onclk(i, j)}
+                            width="100%"
+                            height="100%"
+                        >
+                            <circle cx="50%" cy="50%" r="45%" fill={color[v]} />
+                            <circle
+                                cx="50%"
+                                cy="50%"
+                                r="45%"
+                                fill="black"
+                                fillOpacity="0.1"
+                            />
+                            <circle cx="48%" cy="48%" r="42%" fill={color[v]} />
+                            <circle
+                                cx="40%"
+                                cy="40%"
+                                r="22%"
+                                fill="white"
+                                fillOpacity="0.08"
+                            />
+                        </svg>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div
                 className="grid-mask"
@@ -159,7 +162,7 @@ const Grid = ({
             >
                 {/* {coolsole.info("GridRef", `(${i}, ${j}) ${!disp && selectFlag && selectPos[0] == i && selectPos[1] == j}`)} */}
             </div>
-        </motion.div>
+        </div>
     );
 };
 
@@ -182,7 +185,7 @@ const HomePage = () => {
         let t = gameMap;
         let line = [];
         let lineSet = new Set();
-        
+
         t.forEach((row, i) => {
             row.forEach((obj, j) => {
                 if (obj.v == -1) {
@@ -236,9 +239,7 @@ const HomePage = () => {
                     });
                     lineSet.add(JSON.stringify(line)); // 用set去重(必须格式化为字符串)
                 }
-
             });
-
         });
 
         // TODO: 消除连续的球
@@ -250,7 +251,7 @@ const HomePage = () => {
         });
 
         setGameMap(t);
-    }
+    };
 
     const generateNewBall = () => {
         // 根据hint生成新的球
@@ -290,14 +291,14 @@ const HomePage = () => {
         if (selectFlag && selectPos[0] == i && selectPos[1] == j) {
             clearSelect();
             return;
-        }else if (selectFlag) {
+        } else if (selectFlag) {
             clearSelect();
         }
         setSelectFlag(true);
         setSelectPos([i, j]);
         let t = gameMap;
         getAccessiblePos(t, i, j).forEach((pos) => {
-            let {x,y,route} = pos;
+            let { x, y, route } = pos;
             t[x][y].maskShow = true;
         });
         setGameMap(t);
