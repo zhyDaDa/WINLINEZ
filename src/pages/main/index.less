@@ -6,6 +6,7 @@
     flex-wrap: wrap;
 
     div.layout {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -14,9 +15,28 @@
 
     #layout_l {
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
         background-color: var(--c1);
         // 只在右侧内阴影
         box-shadow: -5px 0 10px 0px #00000066 inset;
+
+        h4{
+            flex: 1;
+        }
+
+        #recordList{
+            flex: 20;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            .listItem{
+                width: 100%;
+            }
+        }
     }
 
     #layout_r {
@@ -32,12 +52,31 @@
             background-color: var(--c111);
             display: flex;
             flex-direction: row;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
 
-            span {
-                padding: 1.5vmin;
+            section.middle{
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                span{
+                    padding: 1.5vmin;
+                }
             }
+
+            section.left,section.right{
+                display: flex;
+                flex-direction: row;
+                justify-content: center ;
+                align-items: center;
+                margin: 0 2.5vmin;
+                .score {
+                    font-weight: bolder;
+                    margin: 1vmin;
+                }
+            }
+            
 
             .cell {
                 padding: 1.5vmin;
@@ -103,12 +142,12 @@
     position: absolute;
 }
 
-.grid{
+.grid {
     width: 100%;
     height: 100%;
     position: relative;
-    top:0vim;
-    left:0vim;
+    top: 0vim;
+    left: 0vim;
 }
 
 // .grid::after {

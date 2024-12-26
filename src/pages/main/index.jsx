@@ -3,9 +3,21 @@ import { AnimatePresence } from "motion/react";
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
+import CountUp from "react-countup";
+import { Col, Row, Statistic, Card, List } from "antd";
 import coolsole from "../../utils/coolsole";
 import "./index.less";
 
+const saveRec = (key, value) => {
+    // save to local file
+    localStorage.setItem(key, JSON.stringify(value));
+};
+const loadRec = (key) => {
+    // load from local file
+    localStorage.getItem(key);
+    return JSON.parse(localStorage.getItem(key));
+};
+const formatter = (value) => <CountUp end={value} separator="," />;
 class OBJ {
     constructor() {
         this.i = -1;
@@ -24,7 +36,7 @@ const color = [
     "#8A2BE2",
 ];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const getRanX = () => Math.floor((Math.random() * color.length) );
+const getRanX = () => Math.floor((Math.random() * color.length) / 1);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -178,6 +190,8 @@ const HomePage = () => {
     const [hint, setHint] = useState([0, 0, 0]);
     const [selectFlag, setSelectFlag] = useState(false);
     const [selectPos, setSelectPos] = useState([-1, -1]);
+    const [bestScore, setBestScore] = useState(0);
+    const [currentScore, setCurrentScore] = useState(0);
     const ballsRef = useRef(null);
 
     const getBalls = () => {
@@ -220,7 +234,7 @@ const HomePage = () => {
         setGameMap(t);
     };
 
-    const checkLine = async () => {
+    const checkLine = async (passive) => {
         // 查看是否存在5个连续的球(包括斜向), 检查出全部的连续球, 并消除
         const minLenToEliminate = 5;
         let t = gameMap;
@@ -285,14 +299,21 @@ const HomePage = () => {
 
         // TODO: 消除连续的球
         if (lineSet.size > 0) {
+            let score = 0;
             lineSet.forEach((line) => {
                 line = JSON.parse(line);
                 line.forEach((pos) => {
+                    score += 2;
                     t[pos[0]][pos[1]].v = -1;
-                    t[pos[0]][pos[1]].maskShow = true;
+                    // t[pos[0]][pos[1]].maskShow = true;
                 });
             });
-            console.log(lineSet);
+            if (lineSet.size > 1) {
+                score = 60;
+            }
+            if (!passive) {
+                setCurrentScore(currentScore + score);
+            }
             await sleep(300);
         }
 
@@ -303,6 +324,9 @@ const HomePage = () => {
         // 根据hint生成新的球
         let t = gameMap;
         let pos = getVaccantPos(t);
+        if (pos.length < hint.length) {
+            checkEnd(true);
+        }
         for (let i = 0; i < hint.length; i++) {
             let ran = Math.floor(Math.random() * pos.length);
             t[pos[ran][0]][pos[ran][1]].v = hint[i];
@@ -329,6 +353,29 @@ const HomePage = () => {
             });
         });
         setGameMap(t);
+    };
+
+    const checkEnd = (forceFlag) => {
+        // 检查是否游戏结束
+        let t = gameMap;
+        let pos = getVaccantPos(t);
+        if (forceFlag || pos.length == 0) {
+            let name = prompt("Game Over! Enter your name: ");
+            let rec = {
+                name: name,
+                score: currentScore,
+                time: new Date().toLocaleString(),
+            };
+            let bestScore = loadRec("bestScore") || 0;
+            if (currentScore > bestScore) {
+                saveRec("bestScore", currentScore);
+            }
+            let records = loadRec("records") || [];
+            records.push(rec);
+            saveRec("records", records);
+            alert("Record saved!");
+            window.location.reload();
+        }
     };
 
     const selectBall = (i, j) => {
@@ -366,7 +413,9 @@ const HomePage = () => {
         await checkLine();
         generateNewBall();
         refreshHint();
-        checkLine();
+        checkLine(true);
+        await sleep(3);
+        checkEnd();
     };
 
     useEffect(() => {
@@ -390,26 +439,58 @@ const HomePage = () => {
             map[x][y].v = getRanX();
         }
         setGameMap(map);
-
         refreshHint();
+
+        // 加载最高分
+        let bestScore = loadRec("bestScore") || 0;
+        setBestScore(bestScore);
+        setCurrentScore(0);
     }, []);
 
     return (
         <div id="layout">
             <div id="layout_l" className="layout">
-                <h3>WINLINEZ</h3>
-                {/* <Counter count={counter} setCount={setCounter} /> */}
-                <button onClick={() => setGameMap(aaa)}>Set Game Map</button>
+                <h4>WINLINEZ</h4>
+                <List
+                    id="recordList"
+                    size="small"
+                    dataSource={loadRec("records") || [{ name: "No Record", score: 0, time: "No Time" }]}
+                    renderItem={(item) => (
+                        <List.Item>
+                            <Card className="listItem" title={`${item.name} - ${item.time}`}>Score: {item.score}</Card>
+                        </List.Item>
+                    )}
+                />
             </div>
             <div id="layout_r" className="layout">
                 <section id="hint_panel">
-                    <span>Next</span>
-                    {hint.map((v, i) => (
-                        <div key={i} className="cell">
-                            <Grid v={v} disp={true} />
-                        </div>
-                    ))}
-                    <span>Colors</span>
+                    <section className="left">
+                        Best Score:{" "}
+                        <Statistic
+                            className="score"
+                            id="bestScore"
+                            value={bestScore}
+                            formatter={formatter}
+                        />
+                    </section>
+                    <section className="middle">
+                        <span>Next</span>
+                        {hint.map((v, i) => (
+                            <div key={i} className="cell">
+                                <Grid v={v} disp={true} />
+                            </div>
+                        ))}
+                        <span>Colors</span>
+                    </section>
+                    <section className="right">
+                        Current Score:{" "}
+                        <Statistic
+                            className="score"
+                            id="currentScore"
+                            value={currentScore}
+                            formatter={formatter}
+                        />
+                    </section>
                 </section>
 
                 <hr />
