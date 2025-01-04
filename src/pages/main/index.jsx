@@ -22,8 +22,19 @@ class B {
         this.x = x || 0;
         this.y = y || 0;
         this.v = v || 0;
+        this.trans = false;
     }
 }
+
+const saveRec = (key, value) => {
+    // save to local file
+    localStorage.setItem(key, JSON.stringify(value));
+};
+const loadRec = (key) => {
+    // load from local file
+    localStorage.getItem(key);
+    return JSON.parse(localStorage.getItem(key));
+};
 
 const color = [
     "#7C0902",
@@ -34,7 +45,7 @@ const color = [
     "#8A2BE2",
 ];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const getRanX = () => Math.floor(Math.random() * color.length);
+const getRanX = () => Math.floor(Math.random() * color.length/3);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -100,6 +111,8 @@ const HomePage = () => {
     const [hint, setHint] = useState([0, 0, 0]);
     const [selectFlag, setSelectFlag] = useState(false);
     const [selectIndex, setSelectIndex] = useState(-1);
+    const [bestScore, setBestScore] = useState(0);
+    const [currentScore, setCurrentScore] = useState(0);
 
     const selectBall = (i) => {
         coolsole.info("select", `(${i})`);
@@ -120,6 +133,12 @@ const HomePage = () => {
         let route = getAccessiblePos(gameMap, from[0], from[1]).find(
             (pos) => pos.x == to[0] && pos.y == to[1]
         ).route;
+
+        setBalls((prev) => {
+            let balls = [...prev];
+            balls[index].trans = true;
+            return balls;
+        });
         
         for (let i = 1; i < route.length; i++) {
             flushSync(() => {
@@ -144,8 +163,147 @@ const HomePage = () => {
             let balls = prev;
             balls[index].x = to[0];
             balls[index].y = to[1];
+            balls[index].trans = false;
             return balls;
         }); 
+    };
+
+    const checkLine = async (passive) => {
+        // 查看是否存在5个连续的球(包括斜向), 检查出全部的连续球, 并消除
+        const minLenToEliminate = 5;
+        let t = gameMap;
+        let line = [];
+        let lineSet = new Set();
+
+        t.forEach((row, i) => {
+            row.forEach((obj, j) => {
+                if (obj.v == -1) {
+                    return;
+                }
+                let v = obj.v;
+                let dir = [
+                    [0, 1],
+                    [1, 0],
+                    [1, 1],
+                    [1, -1],
+                ];
+                dir.forEach((d) => {
+                    let count = 1;
+                    line = [[i, j]];
+                    let x = i + d[0];
+                    let y = j + d[1];
+                    while (
+                        x >= 0 &&
+                        x < gameSize.h &&
+                        y >= 0 &&
+                        y < gameSize.w &&
+                        t[x][y].v == v
+                    ) {
+                        count++;
+                        line.push([x, y]);
+                        x += d[0];
+                        y += d[1];
+                    }
+                    x = i - d[0];
+                    y = j - d[1];
+                    while (
+                        x >= 0 &&
+                        x < gameSize.h &&
+                        y >= 0 &&
+                        y < gameSize.w &&
+                        t[x][y].v == v
+                    ) {
+                        count++;
+                        line.push([x, y]);
+                        x -= d[0];
+                        y -= d[1];
+                    }
+                    if (count >= minLenToEliminate) {
+                        line.sort((a, b) => {
+                            if (a[0] == b[0]) {
+                                return a[1] - b[1];
+                            }
+                            return a[0] - b[0];
+                        });
+                        lineSet.add(JSON.stringify(line)); // 用set去重(必须格式化为字符串)
+                    }
+                });
+            });
+        });
+
+        // TODO: 消除连续的球
+        if (lineSet.size > 0) {
+            let score = 0;
+            lineSet.forEach((line) => {
+                line = JSON.parse(line);
+                line.forEach((pos) => {
+                    score += 2;
+                    t[pos[0]][pos[1]].v = -1;
+                    let ball = balls.find((b) => b.x == pos[0] && b.y == pos[1]);
+                    let index = balls.indexOf(ball);
+                    balls.splice(index, 1);
+                    // t[pos[0]][pos[1]].maskShow = true;
+                });
+            });
+            if (lineSet.size > 1) {
+                score = 60;
+            }
+            if (!passive) {
+                setCurrentScore(currentScore + score);
+            }
+            await sleep(300);
+        }
+
+        setGameMap(t);
+    };
+    
+    const checkEnd = (forceFlag) => {
+        // 检查是否游戏结束
+        let t = gameMap;
+        let pos = getVaccantPos(t);
+        if (forceFlag || pos.length == 0) {
+            let name = prompt("Game Over! Enter your name: ");
+            let rec = {
+                name: name,
+                score: currentScore,
+                time: new Date().toLocaleString(),
+            };
+            let bestScore = loadRec("bestScore") || 0;
+            if (currentScore > bestScore) {
+                saveRec("bestScore", currentScore);
+            }
+            let records = loadRec("records") || [];
+            records.push(rec);
+            saveRec("records", records);
+            alert("Record saved!");
+            window.location.reload();
+        }
+    };
+
+    const generateNewBall = () => {
+        // 根据hint生成新的球
+        let t = gameMap;
+        let b = balls;
+        let pos = getVaccantPos(t);
+        if (pos.length < hint.length) {
+            checkEnd(true);
+        }
+        for (let i = 0; i < hint.length; i++) {
+            let ran = Math.floor(Math.random() * pos.length);
+            t[pos[ran][0]][pos[ran][1]].v = hint[i];
+            b.push(new B(pos[ran][0], pos[ran][1], hint[i]));
+            pos.splice(ran, 1);
+        }
+        setGameMap(t);
+        setBalls(b);
+    };
+
+    const refreshHint = () => {
+        let hint = [];
+        for (let i = 0; i < 3; i++) {
+            hint.push(getRanX());
+        }
+        setHint(hint);
     };
 
     const clearSelect = () => {
@@ -163,8 +321,23 @@ const HomePage = () => {
     };
     const selectShadow = (i, j) => {
         coolsole.info("shadow", `(${i}, ${j})`);
-        moveBall(selectIndex, [i, j]);
+        if (!selectFlag) {
+            return;
+        }
+        move(selectIndex, [i, j]);
         clearSelect();
+    };
+
+    const move = async (index, to) => {
+        await moveBall(index, to);
+        clearSelect();
+        await sleep(30);
+        await checkLine();
+        generateNewBall();
+        refreshHint();
+        checkLine(true);
+        await sleep(3);
+        checkEnd();
     };
 
     useEffect(() => {
@@ -211,7 +384,9 @@ const HomePage = () => {
                     <span>Next</span>
                     {hint.map((v, i) => (
                         <div key={i} className="cell">
-                            <Grid v={v} disp={true} />
+                            <Grid v={v} disp={true}>
+                                <Ball color={color[v]} x={0} y={0} disp />
+                            </Grid>
                         </div>
                     ))}
                     <span>Colors</span>
@@ -240,7 +415,7 @@ const HomePage = () => {
                             </div>
                         ))}
                         {balls.map((ball, i) => (
-                            <Ball key={i} color={color[ball.v]} x={ball.x} y={ball.y} onclk={()=>selectBall(i)} />
+                            <Ball key={i} color={color[ball.v]} x={ball.x} y={ball.y} trans={ball.trans} onclk={()=>selectBall(i)} />
                         )
                         )}
                     </div>
