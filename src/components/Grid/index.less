@@ -1,0 +1,20 @@
+.grid{
+    position: relative;
+}
+
+.grid:hover{
+    opacity: 0.8;
+}
+
+// .grid::after {
+.grid .grid-mask {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2); /* 半透明遮罩层 */
+    cursor: pointer;
+    z-index: 2; /* 遮罩层在最上层 */
+}

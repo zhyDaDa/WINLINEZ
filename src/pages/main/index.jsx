@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
+import Grid from "../../components/Grid/grid";
+import Ball from "../../components/Ball/ball";
 import coolsole from "../../utils/coolsole";
 import "./index.less";
 
@@ -11,6 +13,14 @@ class OBJ {
         this.j = -1;
         this.v = -1;
         this.maskShow = false;
+    }
+}
+
+class B {
+    constructor(x, y, v) {
+        this.x = x || 0;
+        this.y = y || 0;
+        this.v = v || 0;
     }
 }
 
@@ -49,97 +59,18 @@ const getVaccantPos = (map) => {
     return pos;
 };
 
-const Grid = ({
-    i,
-    j,
-    v,
-    onclk,
-    selectFlag,
-    selectPos,
-    disp,
-    maskShow,
-    onshadow,
-}) => {
-    return (
-        <motion.div
-            className="grid"
-            initial={{ opacity: 0.6, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-                duration: 0.4,
-                repeat:
-                    !disp &&
-                    selectFlag &&
-                    selectPos[0] == i &&
-                    selectPos[1] == j
-                        ? Infinity
-                        : 0,
-                repeatType: "reverse",
-                scale: {
-                    type: "spring",
-                    visualDuration: 0.4,
-                    bounce: 0.5,
-                },
-            }}
-        >
-            {v == -1 ? (
-                <svg width="100%" height="100%"></svg>
-            ) : (
-                <svg
-                    onClick={() => onclk(i, j)}
-                    className="ball"
-                    width="100%"
-                    height="100%"
-                >
-                    <circle cx="50%" cy="50%" r="45%" fill={color[v]} />
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="45%"
-                        fill="black"
-                        fillOpacity="0.1"
-                    />
-                    <circle cx="48%" cy="48%" r="42%" fill={color[v]} />
-                    <circle
-                        cx="40%"
-                        cy="40%"
-                        r="22%"
-                        fill="white"
-                        fillOpacity="0.08"
-                    />
-                </svg>
-            )}
-
-            <div
-                className="grid-mask"
-                initial={{ opacity: 0.6 }}
-                animate={{ opacity: 0.0 }}
-                transition={{
-                    duration: 0.4,
-                    repeat: maskShow ? Infinity : 0,
-                    repeatType: "reverse",
-                }}
-                style={{
-                    display: maskShow ? "block" : "none",
-                }}
-                onClick={() => onshadow(i, j)}
-            >
-                {/* {coolsole.info("GridRef", `(${i}, ${j}) ${!disp && selectFlag && selectPos[0] == i && selectPos[1] == j}`)} */}
-            </div>
-        </motion.div>
-    );
-};
 
 const HomePage = () => {
     const [gameMap, setGameMap] = useState(getNewMap());
+    const [balls, setBalls] = useState([]);
     const [hint, setHint] = useState([0, 0, 0]);
     const [selectFlag, setSelectFlag] = useState(false);
-    const [selectPos, setSelectPos] = useState([-1, -1]);
+    const [selectIndex, setSelectIndex] = useState(-1);
 
-    const selectBall = (i, j) => {
-        coolsole.info("select", `(${i}, ${j})`);
+    const selectBall = (i) => {
+        coolsole.info("select", `(${i})`);
         setSelectFlag(true);
-        setSelectPos([i, j]);
+        setSelectIndex(i);
         setGameMap((prev) => {
             let map = prev;
             getVaccantPos(map).forEach((pos) => {
@@ -149,18 +80,25 @@ const HomePage = () => {
         });
     };
 
-    const moveBall = (from, to) => {
+    const moveBall = (index, target) => {
+        let from = [balls[index].x, balls[index].y];
         setGameMap((prev) => {
             let map = prev;
-            map[to[0]][to[1]].v = map[from[0]][from[1]].v;
+            map[target[0]][target[1]].v = map[from[0]][from[1]].v;
             map[from[0]][from[1]].v = -1;
             return map;
         });
+        setBalls((prev) => {
+            let balls = prev;
+            balls[index].x = target[0];
+            balls[index].y = target[1];
+            return balls;
+        }); 
     };
 
     const clearSelect = () => {
         setSelectFlag(false);
-        setSelectPos([-1, -1]);
+        setSelectIndex(-1);
         setGameMap((prev) => {
             let map = prev;
             for(let i = 0; i < gameSize.h; i++) {
@@ -173,15 +111,15 @@ const HomePage = () => {
     };
     const selectShadow = (i, j) => {
         coolsole.info("shadow", `(${i}, ${j})`);
-        moveBall(selectPos, [i, j]);
+        moveBall(selectIndex, [i, j]);
         clearSelect();
     };
 
     useEffect(() => {
         // 初始化, 随机5个位置生成随机颜色, 生成第一轮hint
         let init_num = 5;
-        let map = gameMap;
-        map = getNewMap();
+        let map = getNewMap();
+        let balls = [];
         let posCount = gameSize.w * gameSize.h;
         let pos = [];
         for (let i = 0; i < init_num; i++) {
@@ -196,8 +134,11 @@ const HomePage = () => {
             let x = Math.floor(pos[i] / gameSize.w);
             let y = pos[i] % gameSize.w;
             map[x][y].v = getRanX();
+            let ball = new B(x, y, map[x][y].v);
+            balls.push(ball);
         }
         setGameMap(map);
+        setBalls(balls);
 
         let hint = [];
         for (let i = 0; i < 3; i++) {
@@ -238,14 +179,18 @@ const HomePage = () => {
                                             v={obj.v}
                                             onclk={selectBall}
                                             selectFlag={selectFlag}
-                                            selectPos={selectPos}
+                                            selectPos={selectIndex}
                                             maskShow={obj.maskShow}
-                                            onshadow={selectShadow}
+                                            onClkShadow={selectShadow}
                                         />
                                     </div>
                                 ))}
                             </div>
                         ))}
+                        {balls.map((ball, i) => (
+                            <Ball key={i} color={color[ball.v]} x={ball.x} y={ball.y} onclk={()=>selectBall(i)} />
+                        )
+                        )}
                     </div>
                 </section>
             </div>
