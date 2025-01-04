@@ -14,7 +14,7 @@ const ballStyle = {
     zIndex: 10,
 };
 
-const Ball = ({ color, x, y, onclk }) => {
+const Ball = React.memo(({ color, x, y, onclk }) => {
     let x_ =
             -selfSize / 2 +
             gridSize / 2 +
@@ -40,6 +40,7 @@ const Ball = ({ color, x, y, onclk }) => {
                 // left: `calc(-50% - 4.5vmin + ${x * 10.2}vmin)`,
                 top: `${y_}vmin`,
                 left: `${x_}vmin`,
+                transition: "top 0.3s, left 0.3s",
             }}
         >
             <svg
@@ -66,6 +67,9 @@ const Ball = ({ color, x, y, onclk }) => {
             </svg>
         </motion.div>
     );
-};
+},(prevProps, nextProps) => {
+    return prevProps.x === nextProps.x && prevProps.y === nextProps.y && prevProps.color === nextProps.color;
+}
+)
 
 export default Ball;

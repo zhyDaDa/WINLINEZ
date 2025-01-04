@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { flushSync } from 'react-dom';
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
@@ -28,10 +29,11 @@ const color = [
     "#7C0902",
     "#FF4F00",
     "#FFBF00",
-    "#8DB600",
+    "#000000",
     "#007FFF",
     "#8A2BE2",
 ];
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getRanX = () => Math.floor(Math.random() * color.length);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
@@ -59,6 +61,38 @@ const getVaccantPos = (map) => {
     return pos;
 };
 
+const getAccessiblePos = (map, i, j) => {
+    // 用BFS遍历所有可达的位置, 以及路径
+    let pos = [];
+    let queue = [{ x: i, y: j, route: [[i, j]] }];
+    let visited = new Set();
+    let dir = [
+        [0, 1],
+        [1, 0],
+        [0, -1],
+        [-1, 0],
+    ];
+    while (queue.length > 0) {
+        let { x, y, route } = queue.shift();
+        visited.add(`${x},${y}`);
+        dir.forEach((d) => {
+            let nx = x + d[0];
+            let ny = y + d[1];
+            if (
+                nx >= 0 &&
+                nx < gameSize.h &&
+                ny >= 0 &&
+                ny < gameSize.w &&
+                map[nx][ny].v == -1 &&
+                !visited.has(`${nx},${ny}`)
+            ) {
+                pos.push({ x: nx, y: ny, route: [...route, [nx, ny]] });
+                queue.push({ x: nx, y: ny, route: [...route, [nx, ny]] });
+            }
+        });
+    }
+    return pos;
+};
 
 const HomePage = () => {
     const [gameMap, setGameMap] = useState(getNewMap());
@@ -73,25 +107,43 @@ const HomePage = () => {
         setSelectIndex(i);
         setGameMap((prev) => {
             let map = prev;
-            getVaccantPos(map).forEach((pos) => {
-                map[pos[0]][pos[1]].maskShow = true;
+            let availablePos = getAccessiblePos(map, balls[i].x, balls[i].y);
+            availablePos.forEach((pos) => {
+                map[pos.x][pos.y].maskShow = true;
             });
             return map;
         });
     };
 
-    const moveBall = (index, target) => {
+    const moveBall = async (index, to) => {
         let from = [balls[index].x, balls[index].y];
+        let route = getAccessiblePos(gameMap, from[0], from[1]).find(
+            (pos) => pos.x == to[0] && pos.y == to[1]
+        ).route;
+        
+        for (let i = 1; i < route.length; i++) {
+            flushSync(() => {
+                setBalls((prev) => {
+                    let balls = [...prev];
+                    balls[index].x = route[i][0];
+                    balls[index].y = route[i][1];
+                    return balls;
+                });
+
+            });
+            await sleep(100);
+        }
+
         setGameMap((prev) => {
             let map = prev;
-            map[target[0]][target[1]].v = map[from[0]][from[1]].v;
+            map[to[0]][to[1]].v = map[from[0]][from[1]].v;
             map[from[0]][from[1]].v = -1;
             return map;
         });
         setBalls((prev) => {
             let balls = prev;
-            balls[index].x = target[0];
-            balls[index].y = target[1];
+            balls[index].x = to[0];
+            balls[index].y = to[1];
             return balls;
         }); 
     };
