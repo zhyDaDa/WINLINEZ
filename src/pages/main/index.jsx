@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { flushSync } from 'react-dom';
+import { flushSync } from "react-dom";
 import * as motion from "motion/react-client";
 import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
@@ -45,7 +45,7 @@ const color = [
     "#8A2BE2",
 ];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const getRanX = () => Math.floor(Math.random() * color.length/3);
+const getRanX = () => Math.floor((Math.random() * color.length) / 3);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -114,8 +114,9 @@ const HomePage = () => {
     const [bestScore, setBestScore] = useState(0);
     const [currentScore, setCurrentScore] = useState(0);
 
-    const selectBall = (i) => {
+    const selectBall = async (i) => {
         coolsole.info("select", `(${i})`);
+        clearSelect();
         setSelectFlag(true);
         setSelectIndex(i);
         setGameMap((prev) => {
@@ -139,7 +140,7 @@ const HomePage = () => {
             balls[index].trans = true;
             return balls;
         });
-        
+
         for (let i = 1; i < route.length; i++) {
             flushSync(() => {
                 setBalls((prev) => {
@@ -148,7 +149,6 @@ const HomePage = () => {
                     balls[index].y = route[i][1];
                     return balls;
                 });
-
             });
             await sleep(100);
         }
@@ -165,7 +165,7 @@ const HomePage = () => {
             balls[index].y = to[1];
             balls[index].trans = false;
             return balls;
-        }); 
+        });
     };
 
     const checkLine = async (passive) => {
@@ -239,7 +239,9 @@ const HomePage = () => {
                 line.forEach((pos) => {
                     score += 2;
                     t[pos[0]][pos[1]].v = -1;
-                    let ball = balls.find((b) => b.x == pos[0] && b.y == pos[1]);
+                    let ball = balls.find(
+                        (b) => b.x == pos[0] && b.y == pos[1]
+                    );
                     let index = balls.indexOf(ball);
                     balls.splice(index, 1);
                     // t[pos[0]][pos[1]].maskShow = true;
@@ -253,10 +255,12 @@ const HomePage = () => {
             }
             await sleep(300);
         }
-
-        setGameMap(t);
+        flushSync(() => {
+            setGameMap(t);
+            setBalls(balls);
+        });
     };
-    
+
     const checkEnd = (forceFlag) => {
         // 检查是否游戏结束
         let t = gameMap;
@@ -311,8 +315,8 @@ const HomePage = () => {
         setSelectIndex(-1);
         setGameMap((prev) => {
             let map = prev;
-            for(let i = 0; i < gameSize.h; i++) {
-                for(let j = 0; j < gameSize.w; j++) {
+            for (let i = 0; i < gameSize.h; i++) {
+                for (let j = 0; j < gameSize.w; j++) {
                     map[i][j].maskShow = false;
                 }
             }
@@ -333,6 +337,7 @@ const HomePage = () => {
         clearSelect();
         await sleep(30);
         await checkLine();
+        flushSync();
         generateNewBall();
         refreshHint();
         checkLine(true);
@@ -415,9 +420,15 @@ const HomePage = () => {
                             </div>
                         ))}
                         {balls.map((ball, i) => (
-                            <Ball key={i} color={color[ball.v]} x={ball.x} y={ball.y} trans={ball.trans} onclk={()=>selectBall(i)} />
-                        )
-                        )}
+                            <Ball
+                                key={i}
+                                color={color[ball.v]}
+                                x={ball.x}
+                                y={ball.y}
+                                trans={ball.trans}
+                                onclk={() => selectBall(i)}
+                            />
+                        ))}
                     </div>
                 </section>
             </div>

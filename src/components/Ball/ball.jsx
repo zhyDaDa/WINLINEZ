@@ -28,7 +28,9 @@ const Ball = React.memo(
                 x * (gridSize + 2 * gridBorder);
         return (
             <motion.div
-                initial={{ scale: 1 }}
+                initial={{ opacity: 0.6, scale: 0 }}
+                animate={{ opacity: 1, scale: 0.9 }}
+                exit={{ opacity: 0, scale: 0 }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={disp ? null : onclk}
@@ -47,7 +49,7 @@ const Ball = React.memo(
                               // left: `calc(-50% - 4.5vmin + ${x * 10.2}vmin)`,
                               top: `${y_}vmin`,
                               left: `${x_}vmin`,
-                              transition: trans?"top 0.3s, left 0.3s":null,
+                              transition: trans ? "top 0.3s, left 0.3s" : null,
                           }
                 }
             >
