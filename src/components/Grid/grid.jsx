@@ -24,16 +24,16 @@ const Grid = ({ i, j, v, maskShow, onClkShadow, disp, children }) => {
 
                 <motion.div
                     className="grid-mask"
-                    initial={{ opacity: 0.8 }}
+                    initial={{ opacity: 0.0 }}
                     whileHover={{ opacity: 0.5 }}
                     onClick={disp ? null : () => onClkShadow(i, j)}
                     style={{
-                        // display: maskShow ? "block" : "none",
                         display: maskShow
                             ? "block"
                             : v != -1
                             ? "block"
                             : "none",
+                        display: maskShow ? "block" : "none",
                         cursor: disp ? "default" : "pointer",
                     }}
                 >

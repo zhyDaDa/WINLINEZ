@@ -48,7 +48,7 @@ const color = [
     "#8A2BE2",
 ];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const getRanX = () => Math.floor((Math.random() * color.length) / 3);
+const getRanX = () => Math.floor(Math.random() * color.length);
 const gameSize = { w: 9, h: 9 };
 const getNewMap = () => {
     let map = [];
@@ -262,6 +262,10 @@ const HomePage = () => {
             setGameMap(t);
             setBalls(balls);
         });
+
+        if (lineSet.size > 0) {
+            return true;
+        }
     };
 
     const checkEnd = (forceFlag) => {
@@ -339,13 +343,15 @@ const HomePage = () => {
         await moveBall(index, to);
         clearSelect();
         await sleep(30);
-        await checkLine();
-        flushSync();
-        generateNewBall();
-        refreshHint();
-        checkLine(true);
-        await sleep(3);
-        checkEnd();
+        let checkFlag = await checkLine();
+        await flushSync();
+        if (!checkFlag) {
+            generateNewBall();
+            refreshHint();
+            checkLine(true);
+            await sleep(3);
+            checkEnd();
+        }
     };
 
     useEffect(() => {
@@ -373,7 +379,7 @@ const HomePage = () => {
         setGameMap(map);
         setBalls(balls);
         refreshHint();
-        
+
         // 加载最高分
         let bestScore = loadRec("bestScore") || 0;
         setBestScore(bestScore);
@@ -477,4 +483,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
