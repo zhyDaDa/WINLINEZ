@@ -5,6 +5,8 @@ import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
 import Grid from "../../components/Grid/grid";
 import Ball from "../../components/Ball/ball";
+import CountUp from "react-countup";
+import { Col, Row, Statistic, Card, List } from "antd";
 import coolsole from "../../utils/coolsole";
 import "./index.less";
 
@@ -26,6 +28,7 @@ class B {
     }
 }
 
+const formatter = (value) => <CountUp end={value} separator="," />;
 const saveRec = (key, value) => {
     // save to local file
     localStorage.setItem(key, JSON.stringify(value));
@@ -369,32 +372,69 @@ const HomePage = () => {
         }
         setGameMap(map);
         setBalls(balls);
-
-        let hint = [];
-        for (let i = 0; i < 3; i++) {
-            hint.push(getRanX());
-        }
-        setHint(hint);
+        refreshHint();
+        
+        // 加载最高分
+        let bestScore = loadRec("bestScore") || 0;
+        setBestScore(bestScore);
+        setCurrentScore(0);
     }, []);
 
     return (
         <div id="layout">
             <div id="layout_l" className="layout">
-                <h3>WINLINEZ</h3>
-                {/* <Counter count={counter} setCount={setCounter} /> */}
-                <button onClick={() => setGameMap(aaa)}>Set Game Map</button>
+                <h4>WINLINEZ</h4>
+                <List
+                    id="recordList"
+                    size="small"
+                    dataSource={
+                        loadRec("records") || [
+                            { name: "No Record", score: 0, time: "No Time" },
+                        ]
+                    }
+                    renderItem={(item) => (
+                        <List.Item>
+                            <Card
+                                className="listItem"
+                                title={`${item.name} - ${item.time}`}
+                            >
+                                Score: {item.score}
+                            </Card>
+                        </List.Item>
+                    )}
+                />
             </div>
             <div id="layout_r" className="layout">
                 <section id="hint_panel">
-                    <span>Next</span>
-                    {hint.map((v, i) => (
-                        <div key={i} className="cell">
-                            <Grid v={v} disp={true}>
-                                <Ball color={color[v]} x={0} y={0} disp />
-                            </Grid>
-                        </div>
-                    ))}
-                    <span>Colors</span>
+                    <section className="left">
+                        Best Score:{" "}
+                        <Statistic
+                            className="score"
+                            id="bestScore"
+                            value={bestScore}
+                            formatter={formatter}
+                        />
+                    </section>
+                    <section className="middle">
+                        <span>Next</span>
+                        {hint.map((v, i) => (
+                            <div key={i} className="cell">
+                                <Grid v={v} disp={true}>
+                                    <Ball color={color[v]} x={0} y={0} disp />
+                                </Grid>
+                            </div>
+                        ))}
+                        <span>Colors</span>
+                    </section>
+                    <section className="right">
+                        Current Score:{" "}
+                        <Statistic
+                            className="score"
+                            id="currentScore"
+                            value={currentScore}
+                            formatter={formatter}
+                        />
+                    </section>
                 </section>
 
                 <hr />
@@ -437,3 +477,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
