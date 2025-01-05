@@ -118,7 +118,7 @@ const HomePage = () => {
     const [selectIndex, setSelectIndex] = useState(-1);
     const [bestScore, setBestScore] = useState(0);
     const [currentScore, setCurrentScore] = useState(0);
-    const [settingOpen, setSettingOpen] = useState(true);
+    const [settingOpen, setSettingOpen] = useState(false);
 
     const selectBall = async (i) => {
         coolsole.info("select", `(${i})`);
@@ -413,7 +413,10 @@ const HomePage = () => {
                     )}
                 />
                 <FloatBtn onClk={() => setSettingOpen(true)}></FloatBtn>
-                <SettingPanel settingOpen={settingOpen} setSettingOpen={setSettingOpen}></SettingPanel>                
+                <SettingPanel
+                    settingOpen={settingOpen}
+                    setSettingOpen={setSettingOpen}
+                ></SettingPanel>
             </div>
             <div id="layout_r" className="layout">
                 <section id="hint_panel">
