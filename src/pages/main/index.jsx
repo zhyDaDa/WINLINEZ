@@ -46,8 +46,8 @@ const color = [
     "#FF4F00",
     "#FFBF00",
     "#000000",
-    "#007FFF",
-    "#8A2BE2",
+    "#1034A6",
+    "#DF73FF",
 ];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getRanX = () => Math.floor(Math.random() * color.length);
@@ -156,7 +156,7 @@ const HomePage = () => {
                     return balls;
                 });
             });
-            await sleep(100);
+            await sleep(50);
         }
 
         setGameMap((prev) => {
@@ -345,7 +345,7 @@ const HomePage = () => {
     const move = async (index, to) => {
         await moveBall(index, to);
         clearSelect();
-        await sleep(30);
+        await sleep(3);
         let checkFlag = await checkLine();
         await flushSync();
         if (!checkFlag) {

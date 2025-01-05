@@ -49,7 +49,7 @@ const Ball = React.memo(
                               // left: `calc(-50% - 4.5vmin + ${x * 10.2}vmin)`,
                               top: `${y_}vmin`,
                               left: `${x_}vmin`,
-                              transition: trans ? "top 0.3s, left 0.3s" : null,
+                              transition: trans ? "top 0.1s, left 0.1s" : null,
                           }
                 }
             >
