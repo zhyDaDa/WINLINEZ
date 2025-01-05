@@ -5,6 +5,8 @@ import Button from "../../components/Button/button";
 import Counter from "../../components/Counter/counter";
 import Grid from "../../components/Grid/grid";
 import Ball from "../../components/Ball/ball";
+import FloatBtn from "../../components/FloatBtn/floatBtn";
+import SettingPanel from "../../components/SettingPanel/settingPanel";
 import CountUp from "react-countup";
 import { Col, Row, Statistic, Card, List } from "antd";
 import coolsole from "../../utils/coolsole";
@@ -116,6 +118,7 @@ const HomePage = () => {
     const [selectIndex, setSelectIndex] = useState(-1);
     const [bestScore, setBestScore] = useState(0);
     const [currentScore, setCurrentScore] = useState(0);
+    const [settingOpen, setSettingOpen] = useState(true);
 
     const selectBall = async (i) => {
         coolsole.info("select", `(${i})`);
@@ -409,6 +412,8 @@ const HomePage = () => {
                         </List.Item>
                     )}
                 />
+                <FloatBtn onClk={() => setSettingOpen(true)}></FloatBtn>
+                <SettingPanel settingOpen={settingOpen} setSettingOpen={setSettingOpen}></SettingPanel>                
             </div>
             <div id="layout_r" className="layout">
                 <section id="hint_panel">
